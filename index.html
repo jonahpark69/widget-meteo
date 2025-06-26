@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=320, height=240, initial-scale=1.0" />
+  <title>Widget Météo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1 class="title">Météo</h1>
+      <div class="buttons">
+        <button id="change-city">🔄</button>
+        <button id="save-city">💾</button>
+      </div>
+    </header>
+
+    <!-- Contenu principal -->
+    <main class="content">
+      <img id="background" src="assets/backgrounds/sunny.png" alt="Météo" class="background" />
+      <div class="info">
+        <img id="icon" src="assets/icons/sunny.gif" alt="Icône météo" class="icon" />
+        <img id="mascot" src="assets/mascot/mascot-idle.gif" alt="Mascotte" class="mascot" />
+        <p id="phrase" class="phrase">Il fait beau ! ☀️</p>
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
