@@ -5,30 +5,45 @@
   <meta name="viewport" content="width=320, height=240, initial-scale=1.0" />
   <title>Widget Météo</title>
   <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+
 </head>
 <body>
-
   <div class="container">
-    <!-- Header -->
     <header class="header">
-      <h1 class="title">Météo</h1>
-      <div class="buttons">
-        <button id="change-city">🔄</button>
-        <button id="save-city">💾</button>
-      </div>
-    </header>
-
-    <!-- Contenu principal -->
-    <main class="content">
-      <img id="background" src="assets/backgrounds/sunny.png" alt="Météo" class="background" />
-      <div class="info">
-        <img id="icon" src="assets/icons/sunny.gif" alt="Icône météo" class="icon" />
-        <img id="mascot" src="assets/mascot/mascot-idle.gif" alt="Mascotte" class="mascot" />
-        <p id="phrase" class="phrase">Il fait beau ! ☀️</p>
-      </div>
-    </main>
+  <h1 class="title">Météo</h1>
+  <div class="buttons">
+    <button>
+      <img src="assets/icons/ui/Bouton-widget-meteo-1.svg" alt="←" />
+    </button>
+    <button>
+      <img src="assets/icons/ui/Bouton-widget-meteo-2.svg" alt="→" />
+    </button>
   </div>
+</header>
+
+
+  <main class="content">
+  <img class="background" src="assets/backgrounds/Ciel-clair.png" alt="Fond météo" />
+  <div class="overlay">
+    <div class="temperature">
+  <img src="assets/icons/thermometre.svg" class="thermo" />
+  <span id="temperature" class="temp-text">20°</span>
+    </div>
+
+    <img id="weather-icon" class="icon-meteo" src="assets/icons/icone-Ciel-clair.svg" alt="Icône météo" />
+
+    <h2 class="city">Compiègne</h2>
+    <img class="mascot" src="assets/mascot/mascotte1.gif" alt="Mascotte" />
+    <p class="phrase">Mode solaire activé !</p>
+  </div>
+</main>
+
+</div>
+
 
   <script src="script.js" defer></script>
 </body>
 </html>
+
