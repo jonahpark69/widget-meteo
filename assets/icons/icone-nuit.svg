@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="icone_météo" data-name="icone météo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #eb7523;
+      }
+
+      .cls-2 {
+        fill: #f8c243;
+      }
+    </style>
+  </defs>
+  <rect class="cls-1" x="36.22" y="34.24" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="32.25" y="38.2" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="36.22" y="38.2" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="40.19" y="38.2" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="36.22" y="42.17" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="52.09" y="42.17" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="56.06" y="42.17" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="60.03" y="42.17" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="64" y="42.17" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="48.13" y="46.14" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="52.09" y="46.14" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="56.06" y="46.14" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="60.03" y="46.14" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="64" y="46.14" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="67.97" y="46.14" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="44.16" y="50.11" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="48.13" y="50.11" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="52.09" y="50.11" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="56.06" y="50.11" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="60.03" y="50.11" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="64" y="50.11" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="67.97" y="50.11" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="71.94" y="50.11" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="40.19" y="54.08" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="44.16" y="54.08" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="48.13" y="54.08" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="52.09" y="54.08" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="56.06" y="54.08" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="60.03" y="54.08" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="64" y="54.08" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="67.97" y="54.08" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="71.94" y="54.08" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="75.91" y="54.08" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="40.19" y="58.05" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="44.16" y="58.05" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="48.13" y="58.05" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="52.09" y="58.05" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="71.94" y="58.05" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="75.91" y="58.05" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="87.81" y="58.05" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="40.19" y="62.02" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="44.16" y="62.02" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="48.13" y="62.02" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="52.09" y="62.02" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="83.84" y="62.02" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="87.81" y="62.02" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="91.78" y="62.02" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="40.19" y="65.98" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="44.16" y="65.98" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="48.13" y="65.98" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="52.09" y="65.98" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="71.94" y="65.98" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="75.91" y="65.98" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="87.81" y="65.98" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="40.19" y="69.95" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="44.16" y="69.95" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="48.13" y="69.95" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="52.09" y="69.95" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="56.06" y="69.95" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="60.03" y="69.95" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="64" y="69.95" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="67.97" y="69.95" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="71.94" y="69.95" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="75.91" y="69.95" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="44.16" y="73.92" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="48.13" y="73.92" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="52.09" y="73.92" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="56.06" y="73.92" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="60.03" y="73.92" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="64" y="73.92" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="67.97" y="73.92" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="71.94" y="73.92" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="48.13" y="77.89" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="52.09" y="77.89" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="56.06" y="77.89" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="60.03" y="77.89" width="3.97" height="3.97"/>
+  <rect class="cls-2" x="64" y="77.89" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="67.97" y="77.89" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="36.22" y="81.86" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="52.09" y="81.86" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="56.06" y="81.86" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="60.03" y="81.86" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="64" y="81.86" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="32.25" y="85.83" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="36.22" y="85.83" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="40.19" y="85.83" width="3.97" height="3.97"/>
+  <rect class="cls-1" x="36.22" y="89.8" width="3.97" height="3.97"/>
+</svg>

@@ -139,9 +139,6 @@ html, body {
 }
 
 
-
-
-
 /* MÉTÉO */
 .icon-meteo {
   position: absolute;
@@ -153,18 +150,20 @@ html, body {
   z-index: 10;
 }
 
-
-
 .city {
   position: absolute;
-  top: 40px;
+  top: 50px;
   left: 50%;
   transform: translateX(-50%);
   font-size: 45px;
   color: white;
-  z-index: 10;
   white-space: nowrap;
+  cursor: pointer;
+  z-index: 20;          /* au-dessus d'éventuelles couches */
+  pointer-events: auto; /* force la prise de clic */
 }
+
+
 
 .mascot {
   position: absolute;
@@ -176,7 +175,6 @@ html, body {
   image-rendering: pixelated;
   z-index: 10;
 }
-
 
 .phrase {
   position: absolute;
@@ -198,6 +196,15 @@ html, body {
   justify-content: center;
 }
 
+/* Animation légère pour l'icône météo */
+@keyframes floatIcon {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+.icon-meteo {
+  animation: floatIcon 3s ease-in-out infinite;
+}
 
 
 
