@@ -60,7 +60,7 @@ html, body {
   background: none;
   border: none;
   padding: 4px;
-  cursor: default;
+  cursor: pointer;
 }
 
 .buttons button img {

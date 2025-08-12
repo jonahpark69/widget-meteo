@@ -11,7 +11,7 @@ const bgEl     = document.querySelector(".background");
 const iconEl   = document.getElementById("weather-icon");
 const mascotEl = document.querySelector(".mascot");
 const tempEl   = document.getElementById("temperature");
-const phraseEl = document.querySelector(".phrase");
+const phraseEl = document.getElementById("phrase") || document.querySelector(".phrase");
 
 // Boutons header
 const headerButtons = document.querySelectorAll(".buttons button");
@@ -255,10 +255,12 @@ function applyStyle(styleKey, tempC, cityName, isNight = false) {
 
   const mascotPath = `assets/mascot/mascotte-${styleKey}.gif${cb}`;
 
+  // Cross-fades
   crossfadeImage(bgEl, bgPath);
   crossfadeImage(iconEl, iconPath);
   crossfadeImage(mascotEl, mascotPath);
 
+  // Données
   if (tempEl && Number.isFinite(tempC)) tempEl.textContent = `${Math.round(tempC)}°`;
   if (cityEl && cityName) cityEl.textContent = cityName;
 
@@ -315,7 +317,14 @@ let refreshing = false;
 async function refreshWeather(cityName) {
   if (refreshing) return;
   refreshing = true;
+
+  // ✅ Micro‑optimisation #1 : éviter un flip pendant un changement de ville
+  clearDayNightTimers();
+
   try {
+    // ✅ Micro‑optimisation #2 : label de ville visible immédiatement
+    if (cityEl && cityName) cityEl.textContent = cityName;
+
     const { lat, lon, label } = await geocodeCity(cityName);
     const { tempC, wmo, sunrise, sunset, utcOffsetSeconds } = await getCurrentWeather(lat, lon);
     const styleKey = mapWmoToStyle(wmo);
@@ -348,11 +357,15 @@ async function refreshWeather(cityName) {
 // ==============================
 async function gotoPrevCity() {
   setCurrentIndex(currentIndex - 1);
-  await refreshWeather(getCurrentCity());
+  const target = getCurrentCity();
+  if (cityEl) cityEl.textContent = target; // feedback immédiat
+  await refreshWeather(target);
 }
 async function gotoNextCity() {
   setCurrentIndex(currentIndex + 1);
-  await refreshWeather(getCurrentCity());
+  const target = getCurrentCity();
+  if (cityEl) cityEl.textContent = target; // feedback immédiat
+  await refreshWeather(target);
 }
 async function promptAddOrSwitchCity() {
   const current = (cityEl?.textContent || "").trim();
@@ -362,12 +375,15 @@ async function promptAddOrSwitchCity() {
   const idx = cities.findIndex(c => c.toLowerCase() === name.toLowerCase());
   if (idx >= 0) {
     setCurrentIndex(idx);
-    await refreshWeather(cities[idx]);
+    const target = cities[idx];
+    if (cityEl) cityEl.textContent = target;
+    await refreshWeather(target);
     return;
   }
   cities.push(name);
   saveCities();
   setCurrentIndex(cities.length - 1);
+  if (cityEl) cityEl.textContent = name;
   await refreshWeather(name);
 }
 
@@ -392,6 +408,7 @@ async function init() {
 }
 
 document.addEventListener("DOMContentLoaded", init);
+
 
 
 
