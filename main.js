@@ -1,36 +1,65 @@
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
+// main.js — Widget Météo (frameless + always-on-top)
+const { app, BrowserWindow, Menu, nativeTheme } = require("electron");
+const path = require("path");
 
 let win;
 
 function createWindow() {
+  const WIDTH = 640;
+  const HEIGHT = 480;
+
   win = new BrowserWindow({
-    show: false, // pour éviter le clignotement
-    useContentSize: true,
+    width: WIDTH,
+    height: HEIGHT,
     resizable: false,
-    autoHideMenuBar: true,
+    movable: true,
+    fullscreenable: false,
+    minimizable: true,
+    maximizable: false,
+    alwaysOnTop: true,                 // fenêtre toujours au-dessus
+    // Niveau conseillé pour un “pseudo-widget” sur macOS :
+    // @ts-ignore
+    alwaysOnTopLevel: "floating",
+    frame: false,                      // sans bordure
+    transparent: true,                 // fond transparent
+    backgroundColor: "#00000000",
+    titleBarStyle: "hidden",
+    show: false,                       // éviter le flash à l’ouverture
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
-    }
+      // Retirer preload pour éviter les erreurs si le fichier n’existe pas
+      nodeIntegration: true,
+      contextIsolation: false,
+      backgroundThrottling: false,
+    },
   });
 
-  win.loadFile('index.html');
+  win.loadFile(path.join(__dirname, "index.html"));
 
-  win.once('ready-to-show', () => {
-    // ✅ fixe la taille de la fenêtre avec dimensions pixel réels
-    win.setBounds({ x: 0, y: 0, width: 640, height: 480 });
+  win.once("ready-to-show", () => {
     win.show();
-    win.webContents.setZoomFactor(1); // ← obligatoire pour éviter le zoom Retina
   });
+
+  // Pas de barre de menu (Windows/Linux)
+  Menu.setApplicationMenu(null);
+
+  // Évite le zoom par pinch (trackpad)
+  win.webContents.setVisualZoomLevelLimits(1, 1).catch(() => {});
 }
 
-app.whenReady().then(createWindow);
+// App lifecycle
+app.whenReady().then(() => {
+  try { nativeTheme.themeSource = "dark"; } catch {}
+  createWindow();
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
 });
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
+});
+
 
 
 

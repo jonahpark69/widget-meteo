@@ -206,5 +206,14 @@ html, body {
   animation: floatIcon 3s ease-in-out infinite;
 }
 
+/* Permet de déplacer la fenêtre par le header (frameless Electron) */
+.header { 
+  -webkit-app-region: drag;
+}
+
+/* Les boutons doivent rester cliquables (non-draggables) */
+.buttons, .buttons button, .buttons button * {
+  -webkit-app-region: no-drag;
+}
 
 
