@@ -6,12 +6,15 @@
   "author": "",
   "license": "ISC",
   "scripts": {
-    "start": "electron .",
-    "clean": "rm -rf release-builds",
-    "package:mac:x64": "electron-packager . 'Widget Meteo' --platform=darwin --arch=x64 --overwrite --icon=icon.icns --app-version=$npm_package_version --out=release-builds",
-    "package:mac:arm64": "electron-packager . 'Widget Meteo' --platform=darwin --arch=arm64 --overwrite --icon=icon.icns --app-version=$npm_package_version --out=release-builds",
-    "package:mac": "npm run package:mac:arm64"
-  },
+  "start": "electron .",
+  "clean": "rm -rf release-builds",
+  "package:mac:x64": "electron-packager . 'Widget Meteo' --platform=darwin --arch=x64 --overwrite --icon=icon.icns --app-version=$npm_package_version --out=release-builds",
+  "package:mac:arm64": "electron-packager . 'Widget Meteo' --platform=darwin --arch=arm64 --overwrite --icon=icon.icns --app-version=$npm_package_version --out=release-builds",
+  "package:mac": "npm run package:mac:arm64",
+  "dmg": "create-dmg 'release-builds/Widget Meteo-darwin-arm64/Widget Meteo.app' --overwrite --dmg-title='Widget Meteo'"
+}
+
+,
   "devDependencies": {
     "electron": "^37.1.0",
     "electron-packager": "^17.1.2"

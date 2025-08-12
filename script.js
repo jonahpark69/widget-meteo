@@ -1,8 +1,8 @@
 // ==============================
 // Widget Météo — Visual Crossing (gratuit) + hors‑ligne partiel “à la Apple”
-// - Remplace Open‑Meteo par Visual Crossing
 // - Cache “dernière météo connue” (TTL 60 min)
-// - Cross‑fade, mode nuit via sunrise/sunset fournis par l’API
+// - Cross‑fade, flip jour/nuit via sunrise/sunset API
+// - Ajout / Navigation / Suppression de ville (clic droit sur le nom)
 // ==============================
 
 // 30 minutes
@@ -11,7 +11,8 @@ const WEATHER_TTL = 60 * 60 * 1000; // 60 min
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 // RENSEIGNE ICI TA CLÉ VISUAL CROSSING
-const VC_API_KEY = "YOUR_VC_API_KEY_HERE";
+// (Laisse ta vraie clé si tu l’as déjà mise)
+const VC_API_KEY = "UX549SPMKN2PSTZY895LSUDYJ";
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 // --- Sélecteurs DOM ---
@@ -30,7 +31,8 @@ const btnNext = headerButtons?.[1] || null;
 // --- Villes ---
 const STORAGE_KEY = "widget-meteo-cities";
 const STORAGE_IDX = "widget-meteo-current-index";
-const DEFAULT_CITIES = ["Compiègne", "Paris", "Lyon", "Marseille"];
+const DEFAULT_CITIES = ["Compiègne", "Paris", "Lyon", "Marseille", "Séoul, KR", "Daejeon, KR", "Busan, KR"];
+
 
 let cities = loadCities();
 let currentIndex = loadIndex();
@@ -79,6 +81,9 @@ function loadWeatherCache(cityName) {
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
+function removeWeatherCache(cityName) {
+  try { localStorage.removeItem(cacheKey(cityName)); } catch {}
+}
 function isFresh(cached) {
   return cached && (Date.now() - (cached.cachedAt || 0)) < WEATHER_TTL;
 }
@@ -88,7 +93,6 @@ function isFresh(cached) {
 // ==============================
 const FADE_MS = 220;
 
-// Applique les transitions une seule fois
 [bgEl, iconEl, mascotEl].forEach(el => {
   if (!el) return;
   el.style.transition = `opacity ${FADE_MS}ms linear`;
@@ -135,7 +139,7 @@ function crossfadeImage(el, nextSrc) {
 
 // ==============================
 // Mapping Visual Crossing -> style + phrases
-// `icon` possibles : clear-day, clear-night, partly-cloudy-day, partly-cloudy-night,
+// `icon` : clear-day, clear-night, partly-cloudy-day, partly-cloudy-night,
 // cloudy, rain, thunderstorm, fog, snow, etc.
 // ==============================
 function mapVCToStyle(iconStr, conditionsStr) {
@@ -148,12 +152,10 @@ function mapVCToStyle(iconStr, conditionsStr) {
   if (s.includes("snow")) return "Neige";
   if (s.includes("thunder")) return "Orage";
   if (s.includes("rain") || s.includes("drizzle")) {
-    // léger vs fort : on tente une heuristique
     const c = (conditionsStr || "").toLowerCase();
     if (c.includes("light") || c.includes("faible") || c.includes("petite")) return "Pluie-legere";
     return "Pluie-forte";
   }
-  // fallback
   return "Nuageux-leger";
 }
 
@@ -286,10 +288,9 @@ function parseVC(data, cityName) {
 
   const styleKey = mapVCToStyle(iconStr, conditionsStr);
 
-  // sunrise/sunset sont en heure locale -> convertissons en UTC (comme avant)
-  // Visual Crossing ne donne pas la date dans ces champs (jour courant). On compose date locale du jour.
+  // sunrise/sunset sont en heure locale -> convertissons en UTC
   const localDateISO = (day0?.datetime) || new Date().toISOString().slice(0,10); // "YYYY-MM-DD"
-  const sunriseLocal = `${localDateISO}T${sunrise}`; // ex "2025-08-12T06:13:00"
+  const sunriseLocal = `${localDateISO}T${sunrise}`;
   const sunsetLocal  = `${localDateISO}T${sunset}`;
 
   const sunriseUTC = Date.parse(sunriseLocal + "Z") - tzOffsetSeconds * 1000;
@@ -300,7 +301,9 @@ function parseVC(data, cityName) {
   return { tempC, styleKey, isNight, sunriseUTC, sunsetUTC, tzOffsetSeconds, label: data?.resolvedAddress || cityName };
 }
 
+// ==============================
 // Rafraîchit météo (avec cache partiel)
+// ==============================
 let refreshing = false;
 async function refreshWeather(cityName) {
   if (refreshing) return;
@@ -339,7 +342,8 @@ async function refreshWeather(cityName) {
 
     // 4) Sauvegarde “dernière météo connue”
     saveWeatherCache(label, { styleKey, tempC, isNight, sunriseUTC, sunsetUTC, tzOffsetSeconds });
-  } catch (_) {
+  } catch (e) {
+    console.error("Visual Crossing fetch failed:", e);
     const cached = loadWeatherCache(cityName);
     if (cached) {
       applyStyle(cached.styleKey, cached.tempC, cityName, cached.isNight);
@@ -353,7 +357,7 @@ async function refreshWeather(cityName) {
 }
 
 // ==============================
-// Navigation
+// Ajout / Suppression / Navigation
 // ==============================
 async function gotoPrevCity() {
   setCurrentIndex(currentIndex - 1);
@@ -385,6 +389,32 @@ async function promptAddOrSwitchCity() {
   setCurrentIndex(cities.length - 1);
   if (cityEl) cityEl.textContent = name;
   await refreshWeather(name);
+}
+
+async function deleteCurrentCity() {
+  const cityToDelete = getCurrentCity();
+  if (!cityToDelete) return;
+
+  if (!confirm(`Supprimer la ville "${cityToDelete}" ?`)) return;
+
+  // Nettoie le cache de cette ville
+  removeWeatherCache(cityToDelete);
+
+  // Retire la ville de la liste
+  cities = cities.filter(c => c.toLowerCase() !== cityToDelete.toLowerCase());
+  saveCities();
+
+  // Répare l'index courant
+  if (cities.length === 0) {
+    cities = [...DEFAULT_CITIES];
+    saveCities();
+    currentIndex = 0;
+  } else if (currentIndex >= cities.length) {
+    currentIndex = cities.length - 1;
+  }
+  saveIndex();
+
+  await refreshWeather(getCurrentCity());
 }
 
 // ==============================
@@ -438,13 +468,20 @@ function uiPrompt(message, defaultValue = "") {
 async function init() {
   if (cityEl) {
     cityEl.textContent = getCurrentCity();
-    cityEl.title = "Cliquer pour changer/ajouter une ville";
+    cityEl.title = "Cliquer pour changer/ajouter une ville (clic droit pour supprimer)";
     cityEl.style.cursor = "pointer";
     cityEl.addEventListener("click", () => { promptAddOrSwitchCity().catch(() => {}); });
+    // Clic droit = suppression de la ville courante
+    cityEl.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      deleteCurrentCity().catch(() => {});
+    });
   }
   if (btnPrev) btnPrev.addEventListener("click", gotoPrevCity);
   if (btnNext) btnNext.addEventListener("click", gotoNextCity);
+
   await refreshWeather(getCurrentCity());
+
   if (AUTO_REFRESH_MS > 0) {
     setInterval(() => {
       refreshWeather(getCurrentCity());
@@ -453,6 +490,8 @@ async function init() {
 }
 
 document.addEventListener("DOMContentLoaded", init);
+
+
 
 
 
