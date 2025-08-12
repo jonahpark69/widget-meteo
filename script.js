@@ -1,9 +1,18 @@
 // ==============================
-// Widget Météo — villes + API + auto-refresh + fondu + UI Prompt + flip jour/nuit en temps réel
+// Widget Météo — Visual Crossing (gratuit) + hors‑ligne partiel “à la Apple”
+// - Remplace Open‑Meteo par Visual Crossing
+// - Cache “dernière météo connue” (TTL 60 min)
+// - Cross‑fade, mode nuit via sunrise/sunset fournis par l’API
 // ==============================
 
 // 30 minutes
 const AUTO_REFRESH_MS = 30 * 60 * 1000;
+const WEATHER_TTL = 60 * 60 * 1000; // 60 min
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// RENSEIGNE ICI TA CLÉ VISUAL CROSSING
+const VC_API_KEY = "YOUR_VC_API_KEY_HERE";
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 // --- Sélecteurs DOM ---
 const cityEl   = document.querySelector(".city");
@@ -11,7 +20,7 @@ const bgEl     = document.querySelector(".background");
 const iconEl   = document.getElementById("weather-icon");
 const mascotEl = document.querySelector(".mascot");
 const tempEl   = document.getElementById("temperature");
-const phraseEl = document.getElementById("phrase") || document.querySelector(".phrase");
+const phraseEl = document.querySelector(".phrase") || document.getElementById("phrase");
 
 // Boutons header
 const headerButtons = document.querySelectorAll(".buttons button");
@@ -55,48 +64,23 @@ function setCurrentIndex(i) {
 }
 
 // ==============================
-// UI Prompt
+// Mini cache "dernière météo connue"
 // ==============================
-function uiPrompt(message, defaultValue = "") {
-  return new Promise((resolve) => {
-    const overlay = document.createElement("div");
-    overlay.style.cssText = `
-      position: fixed; inset: 0; z-index: 99999;
-      background: rgba(0,0,0,.55); display: grid; place-items: center;
-      font-family: inherit;
-    `;
-    const box = document.createElement("div");
-    box.style.cssText = `
-      width: 320px; max-width: 90vw; padding: 14px;
-      border: 2px solid #00776e; border-radius: 12px;
-      background: #0b1f1d; color: #fff; display: grid; gap: 10px;
-    `;
-    box.innerHTML = `
-      <div style="font-size:16px;">${message}</div>
-      <input type="text" id="uiPromptInput" value="${defaultValue.replace(/"/g, "&quot;")}"
-        style="padding: 8px; border:2px solid #2b5e59; border-radius:8px; background:#031615; color:#fff; font-size:16px;"/>
-      <div style="display:flex; gap:8px; justify-content:flex-end;">
-        <button id="uiPromptCancel" style="padding:8px 12px; background:#222; color:#ddd; border:2px solid #444; border-radius:8px; cursor:pointer;">Annuler</button>
-        <button id="uiPromptOk" style="padding:8px 12px; background:#0f6e65; color:#fff; border:2px solid #2b8c84; border-radius:8px; cursor:pointer;">OK</button>
-      </div>
-    `;
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
-
-    const input = box.querySelector("#uiPromptInput");
-    const btnOk = box.querySelector("#uiPromptOk");
-    const btnCancel = box.querySelector("#uiPromptCancel");
-
-    const cleanup = (val) => { overlay.remove(); resolve(val); };
-    btnOk.onclick = () => cleanup(input.value.trim() || null);
-    btnCancel.onclick = () => cleanup(null);
-    overlay.addEventListener("click", (e) => { if (e.target === overlay) cleanup(null); });
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") btnOk.click();
-      if (e.key === "Escape") btnCancel.click();
-    });
-    setTimeout(() => { input.focus(); input.select(); }, 0);
-  });
+function cacheKey(cityName) {
+  return `weather:${(cityName || "").toLowerCase()}`;
+}
+function saveWeatherCache(cityName, payload) {
+  const data = { ...payload, cachedAt: Date.now() };
+  try { localStorage.setItem(cacheKey(cityName), JSON.stringify(data)); } catch {}
+}
+function loadWeatherCache(cityName) {
+  try {
+    const raw = localStorage.getItem(cacheKey(cityName));
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+function isFresh(cached) {
+  return cached && (Date.now() - (cached.cachedAt || 0)) < WEATHER_TTL;
 }
 
 // ==============================
@@ -150,17 +134,26 @@ function crossfadeImage(el, nextSrc) {
 }
 
 // ==============================
-// Mapping WMO
+// Mapping Visual Crossing -> style + phrases
+// `icon` possibles : clear-day, clear-night, partly-cloudy-day, partly-cloudy-night,
+// cloudy, rain, thunderstorm, fog, snow, etc.
 // ==============================
-function mapWmoToStyle(wmo) {
-  if ([0].includes(wmo)) return "Ciel-clair";
-  if ([1, 2].includes(wmo)) return "Nuageux-leger";
-  if ([3].includes(wmo)) return "Nuageux-dense";
-  if ([45, 48].includes(wmo)) return "Brouillard";
-  if ([51, 53, 55, 61, 66, 80].includes(wmo)) return "Pluie-legere";
-  if ([56, 57, 63, 65, 67, 81, 82].includes(wmo)) return "Pluie-forte";
-  if ([71, 73, 75, 77, 85, 86].includes(wmo)) return "Neige";
-  if ([95, 96, 99].includes(wmo)) return "Orage";
+function mapVCToStyle(iconStr, conditionsStr) {
+  const s = (iconStr || "").toLowerCase();
+
+  if (s.includes("clear")) return "Ciel-clair";
+  if (s.includes("partly-cloudy")) return "Nuageux-leger";
+  if (s.includes("cloudy")) return "Nuageux-dense";
+  if (s.includes("fog")) return "Brouillard";
+  if (s.includes("snow")) return "Neige";
+  if (s.includes("thunder")) return "Orage";
+  if (s.includes("rain") || s.includes("drizzle")) {
+    // léger vs fort : on tente une heuristique
+    const c = (conditionsStr || "").toLowerCase();
+    if (c.includes("light") || c.includes("faible") || c.includes("petite")) return "Pluie-legere";
+    return "Pluie-forte";
+  }
+  // fallback
   return "Nuageux-leger";
 }
 
@@ -176,7 +169,7 @@ const PHRASES = {
 };
 
 // ==============================
-// État courant pour flip jour/nuit en temps réel
+// État pour flip jour/nuit (via heures API)
 // ==============================
 let lastState = {
   styleKey: null,
@@ -184,7 +177,7 @@ let lastState = {
   cityLabel: null,
   sunriseUTC: null,
   sunsetUTC: null,
-  utcOffsetSeconds: 0,
+  tzOffsetSeconds: 0,
   isNight: null,
 };
 let dayNightTimer = null;
@@ -201,7 +194,7 @@ function computeIsNightFromUTC(nowUTC) {
   return (nowUTC < sunriseUTC) || (nowUTC > sunsetUTC);
 }
 
-// Planifie le prochain basculement jour/nuit précisément au lever/coucher
+// Planifie la prochaine bascule jour/nuit
 function scheduleDayNightFlip() {
   clearDayNightTimers();
   const nowUTC = Date.now();
@@ -210,32 +203,27 @@ function scheduleDayNightFlip() {
 
   lastState.isNight = isNightNow;
 
-  // Détermine la prochaine bascule : si nuit, prochaine = lever du soleil ; sinon, coucher
   const nextBoundaryUTC = isNightNow ? lastState.sunriseUTC : lastState.sunsetUTC;
   let delay = Math.max(0, nextBoundaryUTC - nowUTC);
-
-  // Sécurité : si les heures sont déjà échues (ex. changement de jour), on limite à 30 min
   if (delay === 0) delay = 30 * 60 * 1000;
 
   dayNightTimer = setTimeout(() => {
-    // On re-applique le style à l'identique (même météo), mais on inverse le flag nuit
     if (lastState.styleKey && lastState.cityLabel) {
       const flippedNight = !lastState.isNight;
       applyStyle(lastState.styleKey, lastState.tempC, lastState.cityLabel, flippedNight);
       lastState.isNight = flippedNight;
-      // On reprogramme un flip pour l'autre frontière
       scheduleDayNightFlip();
     }
   }, delay);
 
-  // Tick de sécurité : on vérifie toutes les 10 minutes qu'on est dans le bon état
+  // Tick sécu toutes les 10 min
   safetyTick = setInterval(() => {
     const now = Date.now();
     const shouldNight = computeIsNightFromUTC(now);
     if (shouldNight != null && shouldNight !== lastState.isNight && lastState.styleKey) {
       applyStyle(lastState.styleKey, lastState.tempC, lastState.cityLabel, shouldNight);
       lastState.isNight = shouldNight;
-      scheduleDayNightFlip(); // réajuste les timers
+      scheduleDayNightFlip();
     }
   }, 10 * 60 * 1000);
 }
@@ -248,19 +236,16 @@ function applyStyle(styleKey, tempC, cityName, isNight = false) {
     ? `assets/backgrounds/Nuit.png${cb}`
     : `assets/backgrounds/${styleKey}.png${cb}`;
 
-  // Icône météo spéciale nuit
   const iconPath = isNight
     ? `assets/icons/icone-nuit.svg${cb}`
     : `assets/icons/icone-${styleKey}.svg${cb}`;
 
   const mascotPath = `assets/mascot/mascotte-${styleKey}.gif${cb}`;
 
-  // Cross-fades
   crossfadeImage(bgEl, bgPath);
   crossfadeImage(iconEl, iconPath);
   crossfadeImage(mascotEl, mascotPath);
 
-  // Données
   if (tempEl && Number.isFinite(tempC)) tempEl.textContent = `${Math.round(tempC)}°`;
   if (cityEl && cityName) cityEl.textContent = cityName;
 
@@ -274,78 +259,93 @@ function applyStyle(styleKey, tempC, cityName, isNight = false) {
 }
 
 // ==============================
-// API Open-Meteo
+// Visual Crossing API (adresse directe)
+// https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/{CITY}?unitGroup=metric&include=current,days&key=...&lang=fr
 // ==============================
-async function geocodeCity(name) {
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=fr&format=json`;
+async function fetchVC(cityName) {
+  const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(cityName)}?unitGroup=metric&include=current,days&lang=fr&key=${encodeURIComponent(VC_API_KEY)}&contentType=json`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error("Geocoding failed");
-  const data = await res.json();
-  if (!data.results?.length) throw new Error("City not found");
-  const { latitude, longitude, name: label, country_code } = data.results[0];
-  return { lat: latitude, lon: longitude, label, countryCode: country_code };
+  if (!res.ok) throw new Error(`VC HTTP ${res.status}`);
+  return res.json();
 }
 
-async function getCurrentWeather(lat, lon) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=sunrise,sunset&timezone=auto`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Weather fetch failed");
-  const data = await res.json();
-  const temp = data?.current?.temperature_2m;
-  const wmo  = data?.current?.weather_code;
-  const sunrise = data?.daily?.sunrise?.[0];
-  const sunset = data?.daily?.sunset?.[0];
-  const utcOffsetSeconds = data?.utc_offset_seconds ?? 0;
-  if (typeof temp !== "number" || typeof wmo !== "number" || !sunrise || !sunset) {
-    throw new Error("Invalid weather data");
+function parseVC(data, cityName) {
+  const tempC = data?.currentConditions?.temp;
+  const iconStr = data?.currentConditions?.icon || "";
+  const conditionsStr = data?.currentConditions?.conditions || "";
+  const tzOffsetHours = data?.tzoffset ?? 0; // ex: 2 pour +02:00
+  const tzOffsetSeconds = Math.round(tzOffsetHours * 3600);
+
+  const day0 = Array.isArray(data?.days) ? data.days[0] : null;
+  const sunrise = day0?.sunrise; // "06:13:00"
+  const sunset  = day0?.sunset;  // "21:34:00"
+
+  if (typeof tempC !== "number" || !sunrise || !sunset) {
+    throw new Error("VC invalid payload");
   }
-  return { tempC: temp, wmo, sunrise, sunset, utcOffsetSeconds };
-}
 
-// Détection Nuit (corrigée pour fuseaux horaires lointains, ex: Séoul)
-function isNightTime(sunriseStr, sunsetStr, utcOffsetSeconds = 0) {
-  // Les champs sunrise/sunset d'Open-Meteo sont des heures LOCALES sans offset.
-  // On calcule donc leur équivalent UTC et on compare à l'heure UTC actuelle.
-  const sunriseUTC = Date.parse(sunriseStr + "Z") - utcOffsetSeconds * 1000;
-  const sunsetUTC  = Date.parse(sunsetStr  + "Z") - utcOffsetSeconds * 1000;
+  const styleKey = mapVCToStyle(iconStr, conditionsStr);
+
+  // sunrise/sunset sont en heure locale -> convertissons en UTC (comme avant)
+  // Visual Crossing ne donne pas la date dans ces champs (jour courant). On compose date locale du jour.
+  const localDateISO = (day0?.datetime) || new Date().toISOString().slice(0,10); // "YYYY-MM-DD"
+  const sunriseLocal = `${localDateISO}T${sunrise}`; // ex "2025-08-12T06:13:00"
+  const sunsetLocal  = `${localDateISO}T${sunset}`;
+
+  const sunriseUTC = Date.parse(sunriseLocal + "Z") - tzOffsetSeconds * 1000;
+  const sunsetUTC  = Date.parse(sunsetLocal  + "Z") - tzOffsetSeconds * 1000;
   const nowUTC = Date.now();
-  return { isNight: (nowUTC < sunriseUTC || nowUTC > sunsetUTC), sunriseUTC, sunsetUTC };
+  const isNight = (nowUTC < sunriseUTC || nowUTC > sunsetUTC);
+
+  return { tempC, styleKey, isNight, sunriseUTC, sunsetUTC, tzOffsetSeconds, label: data?.resolvedAddress || cityName };
 }
 
-// Rafraîchit météo
+// Rafraîchit météo (avec cache partiel)
 let refreshing = false;
 async function refreshWeather(cityName) {
   if (refreshing) return;
   refreshing = true;
 
-  // ✅ Micro‑optimisation #1 : éviter un flip pendant un changement de ville
+  // évite un flip pendant switch ville
   clearDayNightTimers();
 
   try {
-    // ✅ Micro‑optimisation #2 : label de ville visible immédiatement
     if (cityEl && cityName) cityEl.textContent = cityName;
 
-    const { lat, lon, label } = await geocodeCity(cityName);
-    const { tempC, wmo, sunrise, sunset, utcOffsetSeconds } = await getCurrentWeather(lat, lon);
-    const styleKey = mapWmoToStyle(wmo);
-    const { isNight, sunriseUTC, sunsetUTC } = isNightTime(sunrise, sunset, utcOffsetSeconds);
+    // 1) Afficher le cache s’il est frais
+    const cached = loadWeatherCache(cityName);
+    if (cached && isFresh(cached)) {
+      applyStyle(cached.styleKey, cached.tempC, cityName, cached.isNight);
+    }
 
-    // Mémorise l'état courant pour flips temps réel
-    lastState = {
-      styleKey,
-      tempC,
-      cityLabel: label,
-      sunriseUTC,
-      sunsetUTC,
-      utcOffsetSeconds,
-      isNight
-    };
+    // 2) Si offline → on s’arrête là (cache ou fallback)
+    if (!navigator.onLine) {
+      if (!(cached && isFresh(cached))) {
+        applyStyle("Nuageux-leger", 20, cityName, false);
+      }
+      return;
+    }
 
+    // 3) Online → appel Visual Crossing
+    const data = await fetchVC(cityName);
+    const { tempC, styleKey, isNight, sunriseUTC, sunsetUTC, tzOffsetSeconds, label } = parseVC(data, cityName);
+
+    // Mémorise l’état
+    lastState = { styleKey, tempC, cityLabel: label, sunriseUTC, sunsetUTC, tzOffsetSeconds, isNight };
+
+    // Applique & planifie flip
     applyStyle(styleKey, tempC, label, isNight);
-    scheduleDayNightFlip(); // programme le basculement automatique
+    scheduleDayNightFlip();
+
+    // 4) Sauvegarde “dernière météo connue”
+    saveWeatherCache(label, { styleKey, tempC, isNight, sunriseUTC, sunsetUTC, tzOffsetSeconds });
   } catch (_) {
-    // En cas d'erreur, on applique un style par défaut et on nettoie les timers
-    applyStyle("Nuageux-leger", 20, cityName, false);
+    const cached = loadWeatherCache(cityName);
+    if (cached) {
+      applyStyle(cached.styleKey, cached.tempC, cityName, cached.isNight);
+    } else {
+      applyStyle("Nuageux-leger", 20, cityName, false);
+    }
     clearDayNightTimers();
   } finally {
     refreshing = false;
@@ -358,13 +358,13 @@ async function refreshWeather(cityName) {
 async function gotoPrevCity() {
   setCurrentIndex(currentIndex - 1);
   const target = getCurrentCity();
-  if (cityEl) cityEl.textContent = target; // feedback immédiat
+  if (cityEl) cityEl.textContent = target;
   await refreshWeather(target);
 }
 async function gotoNextCity() {
   setCurrentIndex(currentIndex + 1);
   const target = getCurrentCity();
-  if (cityEl) cityEl.textContent = target; // feedback immédiat
+  if (cityEl) cityEl.textContent = target;
   await refreshWeather(target);
 }
 async function promptAddOrSwitchCity() {
@@ -388,6 +388,51 @@ async function promptAddOrSwitchCity() {
 }
 
 // ==============================
+// UI Prompt
+// ==============================
+function uiPrompt(message, defaultValue = "") {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.style.cssText = `
+      position: fixed; inset: 0; z-index: 99999;
+      background: rgba(0,0,0,.55); display: grid; place-items: center;
+      font-family: inherit;
+    `;
+    const box = document.createElement("div");
+    box.style.cssText = `
+      width: 320px; max-width: 90vw; padding: 14px;
+      border: 2px solid #00776e; border-radius: 12px;
+      background: #0b1f1d; color: #fff; display: grid; gap: 10px;
+    `;
+    box.innerHTML = `
+      <div style="font-size:16px;">${message}</div>
+      <input type="text" id="uiPromptInput" value="${defaultValue.replace(/"/g, "&quot;")}"
+        style="padding: 8px; border:2px solid #2b5e59; border-radius:8px; background:#031615; color:#fff; font-size:16px;"/>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button id="uiPromptCancel" style="padding:8px 12px; background:#222; color:#ddd; border:2px solid #444; border-radius:8px; cursor:pointer;">Annuler</button>
+        <button id="uiPromptOk" style="padding:8px 12px; background:#0f6e65; color:#fff; border:2px solid #2b8c84; border-radius:8px; cursor:pointer;">OK</button>
+      </div>
+    `;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    const input = box.querySelector("#uiPromptInput");
+    const btnOk = box.querySelector("#uiPromptOk");
+    const btnCancel = box.querySelector("#uiPromptCancel");
+
+    const cleanup = (val) => { overlay.remove(); resolve(val); };
+    btnOk.onclick = () => cleanup(input.value.trim() || null);
+    btnCancel.onclick = () => cleanup(null);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) cleanup(null); });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") btnOk.click();
+      if (e.key === "Escape") btnCancel.click();
+    });
+    setTimeout(() => { input.focus(); input.select(); }, 0);
+  });
+}
+
+// ==============================
 // Init
 // ==============================
 async function init() {
@@ -408,6 +453,9 @@ async function init() {
 }
 
 document.addEventListener("DOMContentLoaded", init);
+
+
+
 
 
 
