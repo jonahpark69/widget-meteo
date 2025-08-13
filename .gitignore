@@ -39,3 +39,13 @@ pids
 .cache/
 .tmp/
 .temp/
+
+# Installers
+*.dmg
+*.zip
+# Builds
+node_modules/
+release-builds/
+dist/
+out/
+build/
